@@ -1,33 +1,19 @@
-const { Pool } = require('pg');
-const express = require('express');
-const path = require('path');
-const PORT = process.env.PORT || 5000;
+const { Client } = require('pg');
+var connectionString = "postgres://gecngtmfnjkjye:40c377e18fd6c75e680a26884d39b7ecd09cceb82088b62251e16beac9bb3fa9@ec2-3-91-135-72.compute-1.amazonaws.com:5432/danhgn18eb2cj5"
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+const client = new Client({
+  connectionString: connectionString,
   ssl: {
     rejectUnauthorized: false
   }
 });
 
-express()
-  .use(express.static(path.join(__dirname, 'public')))
-  .set('views', path.join(__dirname, 'views'))
-  .set('view engine', 'ejs')
-  .get('/', (req, res) => res.render('pages/index'))
-  .get('/cool', (req, res) => res.send(cool()))
-  .get('/db', async (req, res) => {
-    try {
-      const client = await pool.connect();
-      const result = await client.query('SELECT * FROM salesforce.case');
-      const results = { 'results': (result) ? result.rows : null};
-      console.log(JSON.stringify(results));
-      res.render('pages/db', results );
-      client.release();
-    } catch (err) {
-      console.error(err);
-      res.send("Error " + err);
-    }
-  })
-  .listen(PORT, () => console.log(`Listening on ${ PORT }`));
+client.connect();
 
+client.query('SELECT * FROM salesforce.case;', (err, res) => {
+  if (err) throw err;
+  for (let row of res.rows) {
+    console.log(JSON.stringify(row));
+  }
+  client.end();
+});
